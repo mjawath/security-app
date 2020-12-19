@@ -6,10 +6,7 @@ import com.octoperf.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import static lombok.AccessLevel.PACKAGE;
 import static lombok.AccessLevel.PRIVATE;
@@ -24,10 +21,23 @@ final class PublicUsersController {
   @NonNull
   UserCrudService users;
 
+  class  LoginDTO{
+    String foo;
+    String bar;
+
+    public String getFoo() {
+      return foo;
+    }
+
+    public void setFoo(String foo) {
+      this.foo = foo;
+    }
+  }
+
   @PostMapping("/register")
   String register(
-    @RequestParam("username") final String username,
-    @RequestParam("password") final String password) {
+    @RequestParam("foo") final String username,
+    @RequestParam("bar") final String password) {
     users
       .save(
         User
@@ -43,10 +53,20 @@ final class PublicUsersController {
 
   @PostMapping("/login")
   String login(
-    @RequestParam("username") final String username,
-    @RequestParam("password") final String password) {
+    @RequestParam("foo") final String username,
+    @RequestParam("bar") final String password) {
     return authentication
       .login(username, password)
-      .orElseThrow(() -> new RuntimeException("invalid login and/or password"));
+      .orElseThrow(() -> new RuntimeException("invalid login and/or bar"));
+  }
+
+
+  @PostMapping("/v1/login")
+  String login(
+          @RequestBody LoginDTO user) {
+
+    return authentication
+            .login(user.foo, user.bar)
+            .orElseThrow(() -> new RuntimeException("invalid login and/or bar"));
   }
 }
