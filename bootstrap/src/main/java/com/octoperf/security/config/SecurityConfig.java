@@ -22,6 +22,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import com.octoperf.security.config.NoRedirectStrategy;
 import com.octoperf.security.config.TokenAuthenticationFilter;
 import com.octoperf.security.config.TokenAuthenticationProvider;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import static java.util.Objects.requireNonNull;
 import static lombok.AccessLevel.PRIVATE;
@@ -109,4 +111,15 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
     return new HttpStatusEntryPoint(FORBIDDEN);
   }
 
+    @Bean
+    public WebMvcConfigurer corsConfigurer()
+    {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**").allowedOrigins("*").allowedHeaders("*")
+                        .allowedMethods("*");
+            }
+        };
+    }
 }

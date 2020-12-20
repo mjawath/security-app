@@ -21,23 +21,31 @@ final class PublicUsersController {
   @NonNull
   UserCrudService users;
 
-  class  LoginDTO{
-    String foo;
-    String bar;
+  static class  LoginDTO{
+    String username;
+    String password;
 
-    public String getFoo() {
-      return foo;
+    public String getUsername() {
+      return username;
     }
 
-    public void setFoo(String foo) {
-      this.foo = foo;
+    public void setUsername(String username) {
+      this.username = username;
+    }
+
+    public String getPassword() {
+      return password;
+    }
+
+    public void setPassword(String password) {
+      this.password = password;
     }
   }
 
   @PostMapping("/register")
   String register(
-    @RequestParam("foo") final String username,
-    @RequestParam("bar") final String password) {
+    @RequestParam("username") final String username,
+    @RequestParam("password") final String password) {
     users
       .save(
         User
@@ -53,20 +61,21 @@ final class PublicUsersController {
 
   @PostMapping("/login")
   String login(
-    @RequestParam("foo") final String username,
-    @RequestParam("bar") final String password) {
+    @RequestParam("username") final String username,
+    @RequestParam("password") final String password) {
     return authentication
       .login(username, password)
-      .orElseThrow(() -> new RuntimeException("invalid login and/or bar"));
+      .orElseThrow(() -> new RuntimeException("invalid login and/or password"));
   }
 
 
   @PostMapping("/v1/login")
   String login(
           @RequestBody LoginDTO user) {
+    System.out.println(user.getUsername());
 
     return authentication
-            .login(user.foo, user.bar)
-            .orElseThrow(() -> new RuntimeException("invalid login and/or bar"));
+            .login(user.username, user.password)
+            .orElseThrow(() -> new RuntimeException("invalid login and/or password"));
   }
 }
