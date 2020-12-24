@@ -15,6 +15,7 @@ import static java.util.Objects.requireNonNull;
 
 @Value
 @Builder
+//@Entity
 public class User implements UserDetails {
   private static final long serialVersionUID = 2396654715019746670L;
 

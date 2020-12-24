@@ -22,6 +22,9 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import com.octoperf.security.config.NoRedirectStrategy;
 import com.octoperf.security.config.TokenAuthenticationFilter;
 import com.octoperf.security.config.TokenAuthenticationProvider;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -121,5 +124,16 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
                         .allowedMethods("*");
             }
         };
+    }
+
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        CorsConfiguration corsConfiguration = new CorsConfiguration().applyPermitDefaultValues();
+        source.registerCorsConfiguration("/**", corsConfiguration);
+
+        return source;
     }
 }
