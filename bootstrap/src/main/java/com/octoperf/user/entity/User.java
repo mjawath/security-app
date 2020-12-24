@@ -3,25 +3,32 @@ package com.octoperf.user.entity;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Value;
+import com.mycompany.entitybase.BaseEntityString;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import static java.util.Objects.requireNonNull;
 
-@Value
+@Data
 @Builder
-//@Entity
-public class User implements UserDetails {
+@EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "users")
+@NoArgsConstructor
+
+public class User extends BaseEntityString implements UserDetails {
   private static final long serialVersionUID = 2396654715019746670L;
 
-  String id;
+
   String username;
   String password;
+
 
   @JsonCreator
   User(@JsonProperty("id") final String id,
@@ -32,6 +39,12 @@ public class User implements UserDetails {
     this.username = requireNonNull(username);
     this.password = requireNonNull(password);
   }
+
+  public User(String id,String username){
+    this.id = id;
+    this.username = username;
+  }
+
 
   @JsonIgnore
   @Override

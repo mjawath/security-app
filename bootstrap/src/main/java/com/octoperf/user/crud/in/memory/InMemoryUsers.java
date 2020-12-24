@@ -12,8 +12,9 @@ import java.util.Optional;
 
 import static java.util.Optional.ofNullable;
 
-@Service
-final class InMemoryUsers implements UserRepository {
+//@Service
+final class InMemoryUsers {
+
 
   Map<String, User> users = new HashMap<>();
 

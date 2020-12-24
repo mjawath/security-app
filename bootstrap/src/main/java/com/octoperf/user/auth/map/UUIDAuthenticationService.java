@@ -30,13 +30,13 @@ final class UUIDAuthenticationService implements UserAuthenticationService {
     final String uuid = UUID.randomUUID().toString();
     final User user = User
       .builder()
-      .id(uuid)
+//      .id(uuid)
       .username(username)
       .password(password)
       .build();
 
-    users.save(user);
-    return Optional.of(uuid);
+    User userx= users.save(user);
+    return Optional.of(userx.getId());
   }
 
   @Override

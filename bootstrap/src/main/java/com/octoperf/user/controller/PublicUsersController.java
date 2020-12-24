@@ -48,17 +48,13 @@ final class PublicUsersController {
   String register(
     @RequestParam("username") final String username,
     @RequestParam("password") final String password) {
+    User user = new User();
+    user.setUsername(username);
+    user.setPassword(password);
     users
-      .save(
-        User
-          .builder()
-          .id(username)
-          .username(username)
-          .password(password)
-          .build()
-      );
+      .save(user);
 
-    return login(username, password);
+    return "ok";
   }
 
   @PostMapping("/login")

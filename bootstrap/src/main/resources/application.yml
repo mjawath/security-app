@@ -1,1 +1,15 @@
-server.port: 8087
+server:
+  port: 8087
+spring:
+    datasource:
+        password: 123
+        url: jdbc:postgresql://localhost:5432/identityservice
+        username: postgres
+    jpa:
+        database-platform: org.hibernate.dialect.PostgreSQL9Dialect
+        format_sql: true
+        hibernate:
+            ddl-auto: update
+        show_sql: true
+    application:
+            name: identity-service

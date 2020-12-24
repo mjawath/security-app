@@ -1,15 +1,20 @@
 package com.octoperf.security.config;
 
-import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -18,105 +23,139 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-
-import com.octoperf.security.config.NoRedirectStrategy;
-import com.octoperf.security.config.TokenAuthenticationFilter;
-import com.octoperf.security.config.TokenAuthenticationProvider;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import static java.util.Objects.requireNonNull;
-import static lombok.AccessLevel.PRIVATE;
+import javax.sql.DataSource;
+
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled=true)
-@FieldDefaults(level = PRIVATE, makeFinal = true)
- class SecurityConfig extends WebSecurityConfigurerAdapter {
-  private static final RequestMatcher PUBLIC_URLS = new OrRequestMatcher(
-    new AntPathRequestMatcher("/public/**"),
-    new AntPathRequestMatcher("/error/**")
-  );
-  private static final RequestMatcher PROTECTED_URLS = new NegatedRequestMatcher(PUBLIC_URLS);
+@EnableJpaRepositories(basePackages = {"com.octoperf.user.entity"})
+//@ComponentScan(value = {"com.octoperf.user.entity.UserRepository"})
+class SecurityConfig extends WebSecurityConfigurerAdapter {
+    private static final RequestMatcher PUBLIC_URLS = new OrRequestMatcher(
+            new AntPathRequestMatcher("/public/**"),
+            new AntPathRequestMatcher("/error/**")
+    );
+    private static final RequestMatcher PROTECTED_URLS = new NegatedRequestMatcher(PUBLIC_URLS);
+    private static final RequestMatcher LOGIN_URLS = new AntPathRequestMatcher("/login","POST",false);
 
-  private TokenAuthenticationProvider provider;
 
-  SecurityConfig(final TokenAuthenticationProvider provider) {
-    super();
-    this.provider = requireNonNull(provider);
-  }
+    @Autowired
+    public DataSource dataSource;
 
-  @Override
-  protected void configure(final AuthenticationManagerBuilder auth) {
-    auth.authenticationProvider(provider);
-  }
+    SecurityConfig() {
+        super();
+//    this.provider = requireNonNull(provider);
+    }
 
-  @Override
-  public void configure(final WebSecurity web) {
-    web.ignoring().requestMatchers(PUBLIC_URLS);
-  }
+    private AuthenticationProvider authenticationProvider;
 
-  @Override
-  protected void configure(final HttpSecurity http) throws Exception {
-    http
-      .sessionManagement()
-      .sessionCreationPolicy(STATELESS)
-      .and()
-      .exceptionHandling()
-      // this entry point handles when you request a protected page and you are not yet
-      // authenticated
-      .defaultAuthenticationEntryPointFor(forbiddenEntryPoint(), PROTECTED_URLS)
-      .and()
-      .authenticationProvider(provider)
-      .addFilterBefore(restAuthenticationFilter(), AnonymousAuthenticationFilter.class)
-      .authorizeRequests()
-      .requestMatchers(PROTECTED_URLS)
-      .authenticated()
-      .and()
-      .csrf().disable()
-      .formLogin().disable()
-      .httpBasic().disable()
-      .logout().disable();
-  }
 
-  @Bean
-  TokenAuthenticationFilter restAuthenticationFilter() throws Exception {
-    final TokenAuthenticationFilter filter = new TokenAuthenticationFilter(PROTECTED_URLS);
-    filter.setAuthenticationManager(authenticationManager());
-    filter.setAuthenticationSuccessHandler(successHandler());
-    return filter;
-  }
+//    @Autowired
+//    private JdbcTemplate tme;
 
-  @Bean
-  SimpleUrlAuthenticationSuccessHandler successHandler() {
-    final SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler();
-    successHandler.setRedirectStrategy(new NoRedirectStrategy());
-    return successHandler;
-  }
 
-  /**
-   * Disable Spring boot automatic filter registration.
-   */
-  @Bean
-  FilterRegistrationBean disableAutoRegistration(final TokenAuthenticationFilter filter) {
-    final FilterRegistrationBean registration = new FilterRegistrationBean(filter);
-    registration.setEnabled(false);
-    return registration;
-  }
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(jdbcUserDetailsManager()).passwordEncoder(passwordEncoder());
+    }
 
-  @Bean
-  AuthenticationEntryPoint forbiddenEntryPoint() {
-    return new HttpStatusEntryPoint(FORBIDDEN);
-  }
+    //    private AuthenticationProvider authenticationProvider;
+    @Autowired
+//    @Qualifier("daoAuthenticationProvider")
+    public void setAuthenticationProvider(AuthenticationProvider authenticationProvider) {
+        this.authenticationProvider = authenticationProvider;
+    }
 
     @Bean
-    public WebMvcConfigurer corsConfigurer()
-    {
+    public DaoAuthenticationProvider daoAuthenticationProvider(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+        daoAuthenticationProvider.setUserDetailsService(jdbcUserDetailsManager());
+        return daoAuthenticationProvider;
+    }
+
+    @Bean
+    public JdbcUserDetailsManager jdbcUserDetailsManager() {
+        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
+        jdbcUserDetailsManager.setDataSource(dataSource);
+
+        return jdbcUserDetailsManager;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    public void configure(final WebSecurity web) {
+        web.ignoring().requestMatchers(PUBLIC_URLS);
+    }
+
+    @Override
+    protected void configure(final HttpSecurity http) throws Exception {
+        http
+                .sessionManagement()
+                .sessionCreationPolicy(STATELESS)
+                .and()
+                .exceptionHandling()
+                // this entry point handles when you request a protected page and you are not yet
+                // authenticated
+                .defaultAuthenticationEntryPointFor(forbiddenEntryPoint(), PROTECTED_URLS)
+                .and()
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(restAuthenticationFilter(), AnonymousAuthenticationFilter.class)
+                .authorizeRequests()
+                .requestMatchers(PROTECTED_URLS)
+                .authenticated()
+                .and()
+                .csrf().disable()
+                .formLogin().disable()
+                .httpBasic().disable()
+                .logout().disable();
+    }
+
+    @Bean
+    TokenAuthenticationFilter restAuthenticationFilter() throws Exception {
+        final TokenAuthenticationFilter filter = new TokenAuthenticationFilter(PROTECTED_URLS);
+        filter.setAuthenticationManager(authenticationManager());
+        filter.setAuthenticationSuccessHandler(successHandler());
+        filter.setRequiresAuthenticationRequestMatcher(LOGIN_URLS);
+        return filter;
+    }
+
+    @Bean
+    SimpleUrlAuthenticationSuccessHandler successHandler() {
+        final SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler();
+        successHandler.setRedirectStrategy(new NoRedirectStrategy());
+        return successHandler;
+    }
+
+    /**
+     * Disable Spring boot automatic filter registration.
+     */
+    @Bean
+    FilterRegistrationBean disableAutoRegistration(final TokenAuthenticationFilter filter) {
+        final FilterRegistrationBean registration = new FilterRegistrationBean(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    AuthenticationEntryPoint forbiddenEntryPoint() {
+        return new HttpStatusEntryPoint(FORBIDDEN);
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
@@ -136,4 +175,6 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 
         return source;
     }
+
+
 }

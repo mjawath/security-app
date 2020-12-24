@@ -28,8 +28,8 @@ final  class TokenAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
    TokenAuthenticationFilter(final RequestMatcher requiresAuth) {
     super();
-     setRequiresAuthenticationRequestMatcher(requiresAuth);
-  }
+     setFilterProcessesUrl("/api/services/controller/user/login");
+   }
 
   @Override
   public Authentication attemptAuthentication(
