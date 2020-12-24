@@ -1,12 +1,12 @@
 package com.octoperf.security.config;
 
+import com.octoperf.user.crud.api.UserAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -14,7 +14,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -37,7 +36,6 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @Configuration
 @EnableWebSecurity
 @EnableJpaRepositories(basePackages = {"com.octoperf.user.entity"})
-//@ComponentScan(value = {"com.octoperf.user.entity.UserRepository"})
 class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final RequestMatcher PUBLIC_URLS = new OrRequestMatcher(
             new AntPathRequestMatcher("/public/**"),
@@ -50,55 +48,42 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     public DataSource dataSource;
 
-    SecurityConfig() {
-        super();
-//    this.provider = requireNonNull(provider);
-    }
-
     private AuthenticationProvider authenticationProvider;
 
-
-//    @Autowired
-//    private JdbcTemplate tme;
-
-
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(jdbcUserDetailsManager()).passwordEncoder(passwordEncoder());
-    }
-
-    //    private AuthenticationProvider authenticationProvider;
     @Autowired
-//    @Qualifier("daoAuthenticationProvider")
     public void setAuthenticationProvider(AuthenticationProvider authenticationProvider) {
         this.authenticationProvider = authenticationProvider;
     }
 
+
     @Bean
-    public DaoAuthenticationProvider daoAuthenticationProvider(PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
-        daoAuthenticationProvider.setUserDetailsService(jdbcUserDetailsManager());
+    public UserAuthenticationProvider daoAuthenticationProvider(PasswordEncoder passwordEncoder) {
+        UserAuthenticationProvider daoAuthenticationProvider = new UserAuthenticationProvider(passwordEncoder());
+//        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+//        daoAuthenticationProvider.setUserDetailsService(jdbcUserDetailsManager());
         return daoAuthenticationProvider;
     }
 
-    @Bean
-    public JdbcUserDetailsManager jdbcUserDetailsManager() {
-        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
-        jdbcUserDetailsManager.setDataSource(dataSource);
-
-        return jdbcUserDetailsManager;
-    }
+//    @Bean
+//    public UserDetailsManager jdbcUserDetailsManager() {
+////        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
+////        jdbcUserDetailsManager.setDataSource(dataSource);
+//
+//        return new UserService();
+//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+
+
     @Override
     public void configure(final WebSecurity web) {
         web.ignoring().requestMatchers(PUBLIC_URLS);
     }
+
 
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
@@ -123,12 +108,17 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .logout().disable();
     }
 
+    @Autowired
+    protected void configure(AuthenticationManagerBuilder authenticationManagerBuilder){
+        authenticationManagerBuilder.authenticationProvider(authenticationProvider);
+    }
+
     @Bean
     TokenAuthenticationFilter restAuthenticationFilter() throws Exception {
-        final TokenAuthenticationFilter filter = new TokenAuthenticationFilter(PROTECTED_URLS);
-        filter.setAuthenticationManager(authenticationManager());
+        final TokenAuthenticationFilter filter = new TokenAuthenticationFilter(LOGIN_URLS);
+
         filter.setAuthenticationSuccessHandler(successHandler());
-        filter.setRequiresAuthenticationRequestMatcher(LOGIN_URLS);
+        filter.setAuthenticationManager(authenticationManager());
         return filter;
     }
 

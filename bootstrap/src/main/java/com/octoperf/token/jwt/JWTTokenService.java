@@ -25,8 +25,8 @@ import static lombok.AccessLevel.PRIVATE;
 import static org.apache.commons.lang3.StringUtils.substringBeforeLast;
 
 @Service
-@FieldDefaults(level = PRIVATE, makeFinal = true)
-final class JWTTokenService implements Clock, TokenService {
+@FieldDefaults(level = PRIVATE)
+final public class JWTTokenService implements Clock, TokenService {
   private static final String DOT = ".";
   private static final GzipCompressionCodec COMPRESSION_CODEC = new GzipCompressionCodec();
 

@@ -35,9 +35,9 @@ public class User extends BaseEntityString implements UserDetails {
        @JsonProperty("username") final String username,
        @JsonProperty("password") final String password) {
     super();
-    this.id = requireNonNull(id);
-    this.username = requireNonNull(username);
-    this.password = requireNonNull(password);
+    this.id = id;
+    this.username = (username);
+    this.password = (password);
   }
 
   public User(String id,String username){
