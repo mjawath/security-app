@@ -6,19 +6,18 @@ import org.springframework.security.authentication.dao.AbstractUserDetailsAuthen
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 
 /**
  * Created by jawa on 12/25/2020.
  */
-public class UserAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider {
+public class DBAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider {
 
     PasswordEncoder passwordEncoder;
     private UserDetailsManager userDetailsService;
 
     @Autowired
-    public UserAuthenticationProvider(PasswordEncoder pe) {
+    public DBAuthenticationProvider(PasswordEncoder pe) {
         this.passwordEncoder = pe;
     }
 

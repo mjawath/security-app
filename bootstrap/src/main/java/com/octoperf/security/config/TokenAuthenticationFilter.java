@@ -5,12 +5,8 @@ import com.octoperf.token.jwt.JWTTokenService;
 import com.octoperf.user.entity.User;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
@@ -22,18 +18,15 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.util.Optional.ofNullable;
 import static lombok.AccessLevel.PRIVATE;
-import static org.apache.commons.lang3.StringUtils.removeStart;
 
 @FieldDefaults(level = PRIVATE)
 final  class TokenAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-  private static final String BEARER = "Bearer";
+
 
   @Autowired
   private JWTTokenService tokenService;
@@ -63,7 +56,7 @@ final  class TokenAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
       return getAuthenticationManager().authenticate(
               new UsernamePasswordAuthenticationToken(
-                      creds.getUsername(),
+                      creds,
                       creds.getPassword(),
                       new ArrayList<>())
       );
@@ -96,7 +89,11 @@ final  class TokenAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
     super.successfulAuthentication(request,response,chain,authResult);
 
-    Cookie cookie = new Cookie("Authorization", URLEncoder.encode(tokenService.permanent(new HashMap<>()), "UTF-8"));
+    String token = tokenService.generateToken(authResult);
+    logger.info("Token JWT");
+    logger.info(token);
+    response.setHeader("Auth-jwt",token);
+    Cookie cookie = new Cookie("Authorization", token);
     cookie.setMaxAge(60);	//sets expiration after one minute
     cookie.setSecure(true);
     cookie.setHttpOnly(true);

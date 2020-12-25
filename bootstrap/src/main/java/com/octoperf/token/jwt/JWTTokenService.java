@@ -4,18 +4,18 @@ import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.octoperf.date.service.DateService;
 import com.octoperf.token.api.TokenService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Clock;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import lombok.experimental.FieldDefaults;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.jsonwebtoken.SignatureAlgorithm.HS256;
@@ -29,7 +29,7 @@ import static org.apache.commons.lang3.StringUtils.substringBeforeLast;
 final public class JWTTokenService implements Clock, TokenService {
   private static final String DOT = ".";
   private static final GzipCompressionCodec COMPRESSION_CODEC = new GzipCompressionCodec();
-
+  private static final String BEARER = "Bearer";
   DateService dates;
   String issuer;
   int expirationSec;
@@ -47,6 +47,15 @@ final public class JWTTokenService implements Clock, TokenService {
     this.expirationSec = requireNonNull(expirationSec);
     this.clockSkewSec = requireNonNull(clockSkewSec);
     this.secretKey = BASE64.encode(requireNonNull(secret));
+  }
+
+
+  public String generateToken(Authentication auth){
+    UserDetails user = (UserDetails) auth.getPrincipal();
+    Map<String, String> attributes = new HashMap<>();
+    attributes.put("sub",user.getUsername());
+//    attributes.put("id",user.getId());
+    return  permanent(attributes);
   }
 
   @Override
@@ -70,7 +79,8 @@ final public class JWTTokenService implements Clock, TokenService {
       final DateTime expiresAt = now.plusSeconds(expiresInSec);
       claims.setExpiration(expiresAt.toDate());
     }
-    claims.putAll(attributes);
+    claims.setSubject(attributes.remove("sub")).putAll(attributes);
+
 
     return Jwts
       .builder()
@@ -78,6 +88,15 @@ final public class JWTTokenService implements Clock, TokenService {
       .signWith(HS256, secretKey)
       .compressWith(COMPRESSION_CODEC)
       .compact();
+  }
+
+  public Authentication getAuth(String token){
+
+    Map<String, String> verify = verify(token.replace(BEARER,""));
+    if(verify!=null && !verify.isEmpty())
+      return new UsernamePasswordAuthenticationToken(verify.get("sub"),null,null);
+
+    return null;
   }
 
   @Override

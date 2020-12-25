@@ -1,6 +1,6 @@
 package com.octoperf.security.config;
 
-import com.octoperf.user.crud.api.UserAuthenticationProvider;
+import com.octoperf.user.crud.api.DBAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -28,25 +27,19 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import javax.sql.DataSource;
-
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
 @EnableJpaRepositories(basePackages = {"com.octoperf.user.entity"})
-class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final RequestMatcher PUBLIC_URLS = new OrRequestMatcher(
             new AntPathRequestMatcher("/public/**"),
             new AntPathRequestMatcher("/error/**")
     );
     private static final RequestMatcher PROTECTED_URLS = new NegatedRequestMatcher(PUBLIC_URLS);
     private static final RequestMatcher LOGIN_URLS = new AntPathRequestMatcher("/login","POST",false);
-
-
-    @Autowired
-    public DataSource dataSource;
 
     private AuthenticationProvider authenticationProvider;
 
@@ -57,20 +50,10 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     @Bean
-    public UserAuthenticationProvider daoAuthenticationProvider(PasswordEncoder passwordEncoder) {
-        UserAuthenticationProvider daoAuthenticationProvider = new UserAuthenticationProvider(passwordEncoder());
-//        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
-//        daoAuthenticationProvider.setUserDetailsService(jdbcUserDetailsManager());
-        return daoAuthenticationProvider;
+    public DBAuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
+        DBAuthenticationProvider authenticationProvider = new DBAuthenticationProvider(passwordEncoder());
+        return authenticationProvider;
     }
-
-//    @Bean
-//    public UserDetailsManager jdbcUserDetailsManager() {
-////        JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
-////        jdbcUserDetailsManager.setDataSource(dataSource);
-//
-//        return new UserService();
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -88,24 +71,25 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
         http
-                .sessionManagement()
-                .sessionCreationPolicy(STATELESS)
-                .and()
-                .exceptionHandling()
-                // this entry point handles when you request a protected page and you are not yet
-                // authenticated
-                .defaultAuthenticationEntryPointFor(forbiddenEntryPoint(), PROTECTED_URLS)
-                .and()
-                .authenticationProvider(authenticationProvider)
-                .addFilterBefore(restAuthenticationFilter(), AnonymousAuthenticationFilter.class)
-                .authorizeRequests()
-                .requestMatchers(PROTECTED_URLS)
-                .authenticated()
-                .and()
-                .csrf().disable()
-                .formLogin().disable()
-                .httpBasic().disable()
-                .logout().disable();
+            .exceptionHandling()
+            // this entry point handles when you request a protected page and you are not yet
+            // authenticated
+            .defaultAuthenticationEntryPointFor(forbiddenEntryPoint(), PROTECTED_URLS)
+            .and()
+            .authenticationProvider(authenticationProvider)
+            .addFilter(authenticationFilter())
+            .addFilter(restAuthorizationFilter())
+            .authorizeRequests()
+            .requestMatchers(PROTECTED_URLS)
+            .authenticated()
+            .and()
+            .sessionManagement()
+            .sessionCreationPolicy(STATELESS)
+            .and()
+            .csrf().disable()
+            .formLogin().disable()
+            .httpBasic().disable()
+            .logout().disable();
     }
 
     @Autowired
@@ -114,11 +98,19 @@ class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    TokenAuthenticationFilter restAuthenticationFilter() throws Exception {
+    TokenAuthenticationFilter authenticationFilter() throws Exception {
         final TokenAuthenticationFilter filter = new TokenAuthenticationFilter(LOGIN_URLS);
 
         filter.setAuthenticationSuccessHandler(successHandler());
         filter.setAuthenticationManager(authenticationManager());
+        return filter;
+    }
+
+    @Bean
+    JWTAuthorizationFilter restAuthorizationFilter() throws Exception {
+        JWTAuthorizationFilter filter = new JWTAuthorizationFilter(authenticationManager());
+//        filter.setAuthenticationSuccessHandler(successHandler());
+//        filter.setAuthenticationManager(authenticationManager());
         return filter;
     }
 

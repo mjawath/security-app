@@ -22,7 +22,7 @@ final class SecuredUsersController {
   UserAuthenticationService authentication;
 
   @GetMapping("/current")
-  User getCurrent(@AuthenticationPrincipal final User user) {
+  Object getCurrent(@AuthenticationPrincipal final Object user) {
     return user;
   }
 
