@@ -25,35 +25,16 @@ public class UserService  implements UserCrudService,UserDetailsManager {
     @Autowired
     public UserService(PasswordEncoder encoder) {
         passwordEncoder =encoder;
-//        this.setDataSource(dataSource);
-//        setEnableAuthorities(false);
-//        setEnableGroups(false);
     }
 
 
     @Override
     public User save(User user) {
-//        org.springframework.security.core.userdetails.User byUsername = (org.springframework.security.core.userdetails.User)
-//                super.loadUserByUsername(user.getUsername());
-
-//
-//        if(byUsername!=null){
-//            throw new RuntimeException("use already exist");
-//        }
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-//
-//        super.createUser(user);
-//
-//
-//        UserDetails userDetails = super.loadUserByUsername(user.getUsername());
-//        return  new User("",userDetails.getUsername());
         Optional<User> byUsername = findByUsername(user.getUsername());
-
-        byUsername.ifPresent((e)-> new RuntimeException("use already exist"));
+        byUsername.ifPresent((e)-> new RuntimeException("user already exist"));
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User saved = userRepository.save(user);
-
         return saved;
 
     }

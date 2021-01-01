@@ -31,6 +31,7 @@ public class DBAuthenticationProvider extends AbstractUserDetailsAuthenticationP
         UserDetails  ud =userDetailsService.loadUserByUsername(username);
 
         //verify password
+        passwordEncoder.matches(usernamePasswordAuthenticationToken.getCredentials().toString(),ud.getPassword());
         return ud;
     }
 

@@ -35,30 +35,24 @@ final  class TokenAuthenticationFilter extends UsernamePasswordAuthenticationFil
   TokenAuthenticationFilter(RequestMatcher rm) {
     super();
      setRequiresAuthenticationRequestMatcher(rm);
-//     setFilterProcessesUrl("/api/services/controller/user/login");
    }
 
   @Override
   public Authentication attemptAuthentication(
     final HttpServletRequest request,
     final HttpServletResponse response) {
-    final String param = ofNullable(request.getHeader(AUTHORIZATION))
-      .orElse(request.getParameter("t"));
 
-//    final String token = ofNullable(param)
-//      .map(value -> removeStart(value, BEARER))
-//      .map(String::trim)
-//      .orElseThrow(() -> new BadCredentialsException("Missing Authentication Token"));
     User creds =null;
     try {
       creds = new ObjectMapper()
               .readValue(request.getInputStream(), User.class);
 
+      UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+              creds,
+              creds.getPassword(),
+              new ArrayList<>());
       return getAuthenticationManager().authenticate(
-              new UsernamePasswordAuthenticationToken(
-                      creds,
-                      creds.getPassword(),
-                      new ArrayList<>())
+              authentication
       );
     }
       catch(Exception e){

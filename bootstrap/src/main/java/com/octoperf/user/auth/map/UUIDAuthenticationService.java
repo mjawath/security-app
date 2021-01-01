@@ -7,8 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -22,8 +20,7 @@ import static lombok.AccessLevel.PRIVATE;
 @Primary
 
 final class UUIDAuthenticationService implements UserAuthenticationService {
-  @NonNull
-  UserCrudService users;
+  @NonNull UserCrudService users;
 
   @Override
   public Optional<String> login(final String username, final String password) {

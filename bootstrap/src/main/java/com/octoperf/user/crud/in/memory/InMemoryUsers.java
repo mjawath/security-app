@@ -2,8 +2,6 @@ package com.octoperf.user.crud.in.memory;
 
 import com.octoperf.user.crud.api.UserCrudService;
 import com.octoperf.user.entity.User;
-import com.octoperf.user.entity.UserRepository;
-import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;

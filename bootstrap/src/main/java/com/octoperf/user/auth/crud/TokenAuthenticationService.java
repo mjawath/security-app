@@ -8,8 +8,6 @@ import com.octoperf.user.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
-import org.springframework.context.annotation.Primary;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -24,8 +22,7 @@ import static lombok.AccessLevel.PRIVATE;
 final class TokenAuthenticationService implements UserAuthenticationService {
   @NonNull
   TokenService tokens;
-  @NonNull
-  UserCrudService users;
+  @NonNull UserCrudService users;
 
   @Override
   public Optional<String> login(final String username, final String password) {
